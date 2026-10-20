@@ -1,0 +1,32 @@
+{
+  "manifestVersion": 1,
+  "pluginId": "ai.rever.boss.plugin.dynamic.scheduler",
+  "displayName": "Boss Scheduler",
+  "version": "1.0.0",
+  "apiVersion": "1.0.103",
+  "minApiVersion": "1.0.80",
+  "minBossVersion": "9.4.2",
+  "mainClass": "ai.rever.boss.plugin.dynamic.scheduler.SchedDynamicPlugin",
+  "type": "panel",
+  "description": "Installs and starts Boss Scheduler (boss-sched), the always-on job scheduler that keeps running when BOSS is closed, and shows its jobs and run history. The scheduler itself runs under launchd (macOS) or systemd (Linux), not inside BOSS.",
+  "author": "Risa Labs",
+  "url": "https://github.com/risa-labs-inc/boss-plugin-scheduler",
+  "panel": {
+    "icon": "Schedule",
+    "location": "left.bottom",
+    "order": 59,
+    "panelId": "scheduler-panel",
+    "displayName": "Scheduler"
+  },
+  "definedPermissions": [
+    {
+      "name": "scheduler.manage",
+      "description": "Let agents run, enable and disable Boss Scheduler jobs. A run executes the job's command on this machine immediately."
+    }
+  ],
+  "sandbox": {
+    "maxThreads": 4,
+    "maxRestartAttempts": 3,
+    "heartbeatIntervalMs": 5000
+  }
+}

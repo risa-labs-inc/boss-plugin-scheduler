@@ -1,0 +1,46 @@
+name: Tests
+
+# build.yml releases on push to main (via the shared workflow, which also runs
+# the build). This runs the same tests on pull requests, before a merge.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # boss-plugin-api is compileOnly (the host provides it at runtime), but the
+      # tests run outside the host, so the jar has to be on the test classpath.
+      - name: Fetch the boss-plugin-api jar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p build/downloaded-deps
+          API_VERSION=$(gh api repos/risa-labs-inc/boss-plugin-api/releases/latest --jq '.tag_name' | sed 's/^v//')
+          echo "Resolved boss-plugin-api $API_VERSION"
+          curl -fsSL -o build/downloaded-deps/boss-plugin-api.jar \
+            "https://github.com/risa-labs-inc/boss-plugin-api/releases/download/v${API_VERSION}/boss-plugin-api-${API_VERSION}.jar"
+
+      - name: Run tests
+        run: ./gradlew test --no-daemon
+        env:
+          CI: 'true'
+
+      # A test task with no sources is NO-SOURCE and passes; require the
+      # download-path test to have actually run.
+      - name: Assert the download test ran
+        run: |
+          RESULTS='build/test-results/test/TEST-ai.rever.boss.plugin.dynamic.scheduler.SchedDownloaderTest.xml'
+          test -f "$RESULTS" || { echo "::error::SchedDownloaderTest produced no results"; exit 1; }
+          grep -q 'tests="[1-9]' "$RESULTS" || { echo "::error::SchedDownloaderTest ran zero cases"; exit 1; }
